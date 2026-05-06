@@ -20,7 +20,7 @@ export default class ScholarSidekickPlugin extends Plugin {
 
     this.addCommand({
       id: "replace-identifier-at-cursor",
-      name: "Replace identifier at cursor with citation",
+      name: "Replace identifier at caret with citation",
       editorCallback: (editor) => this.replaceAtCursor(editor),
     });
 
@@ -32,13 +32,13 @@ export default class ScholarSidekickPlugin extends Plugin {
 
     this.addCommand({
       id: "export-note-bibtex",
-      name: "Export note citations to BibTeX",
+      name: "Export note citations to bibtex",
       callback: () => this.exportNote("bib"),
     });
 
     this.addCommand({
       id: "export-note-ris",
-      name: "Export note citations to RIS",
+      name: "Export note citations to ris",
       callback: () => this.exportNote("ris"),
     });
 
@@ -66,7 +66,7 @@ export default class ScholarSidekickPlugin extends Plugin {
   private async formatSelection(editor: Editor) {
     const raw = editor.getSelection().trim();
     if (!raw) {
-      new Notice("Select an identifier (DOI, PMID, ISBN, arXiv) first.");
+      new Notice("Select an identifier first.");
       return;
     }
     new Notice("Formatting…");
@@ -93,7 +93,7 @@ export default class ScholarSidekickPlugin extends Plugin {
 
     const match = findIdentifierAt(fullText, offset, 96);
     if (!match) {
-      new Notice("No identifier found near the cursor. Try selecting it first.");
+      new Notice("No identifier found near the caret. Try selecting it first.");
       return;
     }
 
