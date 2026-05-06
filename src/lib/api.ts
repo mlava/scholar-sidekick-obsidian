@@ -159,17 +159,17 @@ async function doRequest(
   // Obsidian's requestUrl does not natively support AbortController. We
   // simulate timeout/cancel by racing the request against a sentinel.
   let cancelled = false;
-  let timer: ReturnType<typeof setTimeout> | null = null;
+  let timer: number | null = null;
   const onAbort = () => {
     cancelled = true;
   };
   if (opts.signal) opts.signal.addEventListener("abort", onAbort, { once: true });
 
   const timeoutPromise = new Promise<{ __error: "timeout" }>((resolve) => {
-    timer = setTimeout(() => resolve({ __error: "timeout" }), opts.timeoutMs);
+    timer = activeWindow.setTimeout(() => resolve({ __error: "timeout" }), opts.timeoutMs);
   });
 
-  console.log("[scholar-sidekick] →", opts.method, opts.url);
+  console.debug("[scholar-sidekick] →", opts.method, opts.url);
   try {
     const headers: Record<string, string> = { "X-Scholar-Client": CLIENT_TAG };
     if (opts.contentType) headers["Content-Type"] = opts.contentType;
@@ -182,23 +182,23 @@ async function doRequest(
     });
     const result = await Promise.race([reqPromise, timeoutPromise]);
     if (cancelled) {
-      console.log("[scholar-sidekick] ← cancelled");
+      console.debug("[scholar-sidekick] ← cancelled");
       return { __error: "abort" };
     }
     if (isResponse(result)) {
-      console.log("[scholar-sidekick] ←", result.status, opts.url, {
+      console.debug("[scholar-sidekick] ←", result.status, opts.url, {
         headers: result.headers,
         bodyPreview: typeof result.text === "string" ? result.text.slice(0, 400) : "(no body)",
       });
     } else {
-      console.log("[scholar-sidekick] ← timeout");
+      console.debug("[scholar-sidekick] ← timeout");
     }
     return result;
   } catch (err) {
     console.error("[scholar-sidekick] requestUrl threw despite throw:false", err);
     return { __error: "network" };
   } finally {
-    if (timer) clearTimeout(timer);
+    if (timer) activeWindow.clearTimeout(timer);
     if (opts.signal) opts.signal.removeEventListener("abort", onAbort);
   }
 }

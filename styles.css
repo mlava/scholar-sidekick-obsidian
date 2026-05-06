@@ -1,1 +1,39 @@
-/* Scholar Sidekick — Obsidian plugin styles. Kept minimal for the MVP scaffold. */
+/* Scholar Sidekick — Obsidian plugin styles. */
+
+.scholar-sidekick-identifier-input {
+  width: 100%;
+}
+
+.scholar-sidekick-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.scholar-sidekick-chip {
+  padding: 2px 8px;
+}
+
+.scholar-sidekick-search-input {
+  width: 100%;
+  margin-bottom: 8px;
+}
+
+.scholar-sidekick-button-row {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.scholar-sidekick-results-list {
+  list-style: none;
+  padding: 0;
+  max-height: 240px;
+  overflow-y: auto;
+}
+
+.scholar-sidekick-results-item {
+  padding: 4px 0;
+  cursor: pointer;
+}

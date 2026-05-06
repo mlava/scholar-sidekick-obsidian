@@ -33,33 +33,32 @@ export class InsertCitationModal extends Modal {
 
     new Setting(contentEl)
       .setName("Identifier")
-      .setDesc("DOI, PMID, ISBN, arXiv ID, ADS bibcode, or any URL containing one.")
-      .addText((text) =>
+      .setDesc("Enter a citation identifier or URL.")
+      .addText((text) => {
         text
           .setPlaceholder("10.1038/s41586-021-03819-2")
           .setValue(this.identifier)
           .onChange((value) => {
             this.identifier = value.trim();
-          })
-          .inputEl.setAttribute("style", "width: 100%"),
-      );
+          });
+        text.inputEl.addClass("scholar-sidekick-identifier-input");
+      });
 
     const styleRow = new Setting(contentEl)
       .setName("Style")
-      .setDesc(`Currently: ${this.style}. Pick a built-in or search the full CSL catalogue below.`);
+      .setDesc(`Currently: ${this.style}. Pick a built-in or search the full catalogue below.`);
 
     const chipsWrap = styleRow.controlEl.createDiv({ cls: "scholar-sidekick-chips" });
-    chipsWrap.style.display = "flex";
-    chipsWrap.style.flexWrap = "wrap";
-    chipsWrap.style.gap = "6px";
     for (const id of BUILTIN_STYLES) {
-      const btn = chipsWrap.createEl("button", { text: id.toUpperCase(), cls: "mod-cta" });
-      btn.style.padding = "2px 8px";
+      const btn = chipsWrap.createEl("button", {
+        text: id.toUpperCase(),
+        cls: ["mod-cta", "scholar-sidekick-chip"],
+      });
       btn.onclick = (e) => {
         e.preventDefault();
         this.style = id;
         styleRow.setDesc(
-          `Currently: ${this.style}. Pick a built-in or search the full CSL catalogue below.`,
+          `Currently: ${this.style}. Pick a built-in or search the full catalogue below.`,
         );
       };
     }
@@ -69,27 +68,27 @@ export class InsertCitationModal extends Modal {
     const searchInput = searchWrap.createEl("input", {
       type: "text",
       placeholder: "Search 10,000+ styles…",
+      cls: "scholar-sidekick-search-input",
     });
-    searchInput.style.width = "100%";
-    searchInput.style.marginBottom = "8px";
 
-    this.statusEl = searchWrap.createEl("div", { cls: "scholar-sidekick-status" });
-    this.resultsEl = searchWrap.createEl("div");
+    this.statusEl = searchWrap.createDiv({ cls: "scholar-sidekick-status" });
+    this.resultsEl = searchWrap.createDiv();
 
     let debounce: number | undefined;
     searchInput.addEventListener("input", () => {
-      window.clearTimeout(debounce);
-      debounce = window.setTimeout(() => this.runStyleSearch(searchInput.value), 200);
+      activeWindow.clearTimeout(debounce);
+      debounce = activeWindow.setTimeout(() => {
+        void this.runStyleSearch(searchInput.value);
+      }, 200);
     });
 
-    const buttonRow = contentEl.createDiv();
-    buttonRow.style.display = "flex";
-    buttonRow.style.justifyContent = "flex-end";
-    buttonRow.style.gap = "8px";
-    buttonRow.style.marginTop = "16px";
+    const buttonRow = contentEl.createDiv({ cls: "scholar-sidekick-button-row" });
     const cancel = buttonRow.createEl("button", { text: "Cancel" });
     cancel.onclick = () => this.close();
-    const insert = buttonRow.createEl("button", { text: "Insert", cls: "mod-cta" });
+    const insert = buttonRow.createEl("button", {
+      text: "Insert",
+      cls: ["mod-cta", "scholar-sidekick-chip"],
+    });
     insert.onclick = () => this.submit();
   }
 
@@ -119,15 +118,9 @@ export class InsertCitationModal extends Modal {
       return;
     }
     this.statusEl.textContent = `${results.length} matches`;
-    const list = this.resultsEl.createEl("ul");
-    list.style.listStyle = "none";
-    list.style.padding = "0";
-    list.style.maxHeight = "240px";
-    list.style.overflowY = "auto";
+    const list = this.resultsEl.createEl("ul", { cls: "scholar-sidekick-results-list" });
     for (const entry of results.slice(0, 30)) {
-      const li = list.createEl("li");
-      li.style.padding = "4px 0";
-      li.style.cursor = "pointer";
+      const li = list.createEl("li", { cls: "scholar-sidekick-results-item" });
       li.textContent = `${entry.title} — ${entry.id}`;
       li.onclick = () => {
         this.style = entry.id;
