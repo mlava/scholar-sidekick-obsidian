@@ -3,7 +3,7 @@
 // only module format Obsidian's plugin loader accepts).
 
 import { context, build } from "esbuild";
-import builtins from "builtin-modules";
+import { builtinModules } from "node:module";
 
 const production = process.argv[2] === "production";
 
@@ -31,7 +31,7 @@ const options = {
     "@lezer/common",
     "@lezer/highlight",
     "@lezer/lr",
-    ...builtins,
+    ...builtinModules,
   ],
   format: "cjs",
   target: "es2018",

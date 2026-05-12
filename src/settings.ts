@@ -78,9 +78,7 @@ export class ScholarSidekickSettingTab extends PluginSettingTab {
 
     new Setting(containerEl)
       .setName("API base URL")
-      .setDesc(
-        "Override only if you're testing against a staging or self-hosted instance.",
-      )
+      .setDesc("Override only if you're testing against a staging or self-hosted instance.")
       .addText((text) =>
         text
           .setPlaceholder("https://scholar-sidekick.com")

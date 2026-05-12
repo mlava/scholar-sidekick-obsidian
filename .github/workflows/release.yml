@@ -1,0 +1,74 @@
+# Release workflow for the Scholar Sidekick Obsidian plugin.
+#
+# Runs in the standalone release-mirror repo (mlava/scholar-sidekick-obsidian)
+# every time a version tag is pushed (e.g. 0.1.2). Rebuilds the plugin from
+# source inside the Action, generates a build-provenance attestation for the
+# release artefacts (main.js, styles.css), and publishes a GitHub Release with
+# the three files Obsidian's community-plugins bot expects:
+# main.js, manifest.json, styles.css.
+#
+# Source-of-truth for this file is obsidian-plugin/.github/workflows/release.yml
+# in the canonical scholar-sidekick repo; the sync-to-public.mjs script mirrors
+# it into the public repo on every release.
+
+name: Release
+
+on:
+  push:
+    tags:
+      - "*.*.*"
+
+permissions:
+  contents: write
+  id-token: write
+  attestations: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Verify manifest version matches tag
+        run: |
+          MANIFEST_VERSION=$(node -p "require('./manifest.json').version")
+          TAG_VERSION="${GITHUB_REF_NAME}"
+          if [ "$MANIFEST_VERSION" != "$TAG_VERSION" ]; then
+            echo "::error::manifest.json version ($MANIFEST_VERSION) does not match tag ($TAG_VERSION)"
+            exit 1
+          fi
+
+      - name: Build plugin
+        run: npm run build
+
+      - name: Verify build artefacts exist
+        run: |
+          test -f main.js || { echo "::error::main.js missing after build"; exit 1; }
+          test -f styles.css || { echo "::error::styles.css missing after build"; exit 1; }
+          test -f manifest.json || { echo "::error::manifest.json missing"; exit 1; }
+
+      - name: Generate build provenance attestation
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: |
+            main.js
+            styles.css
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "${GITHUB_REF_NAME}" \
+            main.js manifest.json styles.css \
+            --title "v${GITHUB_REF_NAME}" \
+            --notes "Release v${GITHUB_REF_NAME}. Mirrored from [mlava/scholar-sidekick](https://github.com/mlava/scholar-sidekick) obsidian-plugin/ at the matching tag."
