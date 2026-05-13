@@ -166,7 +166,7 @@ async function doRequest(
   if (opts.signal) opts.signal.addEventListener("abort", onAbort, { once: true });
 
   const timeoutPromise = new Promise<{ __error: "timeout" }>((resolve) => {
-    timer = activeWindow.setTimeout(() => resolve({ __error: "timeout" }), opts.timeoutMs);
+    timer = window.setTimeout(() => resolve({ __error: "timeout" }), opts.timeoutMs);
   });
 
   console.debug("[scholar-sidekick] →", opts.method, opts.url);
@@ -198,7 +198,7 @@ async function doRequest(
     console.error("[scholar-sidekick] requestUrl threw despite throw:false", err);
     return { __error: "network" };
   } finally {
-    if (timer) activeWindow.clearTimeout(timer);
+    if (timer) window.clearTimeout(timer);
     if (opts.signal) opts.signal.removeEventListener("abort", onAbort);
   }
 }
