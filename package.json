@@ -1,6 +1,6 @@
 {
   "name": "scholar-sidekick-obsidian",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "private": true,
   "description": "Scholar Sidekick Obsidian plugin — convert scholarly identifiers to formatted citations from any note.",
   "type": "module",

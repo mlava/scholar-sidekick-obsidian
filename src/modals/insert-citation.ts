@@ -76,8 +76,8 @@ export class InsertCitationModal extends Modal {
 
     let debounce: number | undefined;
     searchInput.addEventListener("input", () => {
-      activeWindow.clearTimeout(debounce);
-      debounce = activeWindow.setTimeout(() => {
+      window.clearTimeout(debounce);
+      debounce = window.setTimeout(() => {
         void this.runStyleSearch(searchInput.value);
       }, 200);
     });

@@ -128,11 +128,14 @@ setTooltip / setPlaceholder / setText / setTitle`,
   `el.setAttribute('style', ...)`. Move every inline style into
   `styles.css` and apply via `cls:` / `addClass()`. There is a
   `setCssProps` helper for cases that genuinely need to vary at runtime.
-- **`obsidianmd/prefer-active-window-timers`** — `setTimeout` /
-  `clearTimeout` must be `activeWindow.setTimeout` /
-  `activeWindow.clearTimeout` for popout-window compatibility.
-  TypeScript: `let timer: number | null = null` (the return type is
-  `number` in browser context, not `NodeJS.Timeout`).
+- **Timer functions must use plain `window.setTimeout` /
+  `window.clearTimeout`.** The earlier `prefer-active-window-timers`
+  rule (which preferred `activeWindow.*`) has been reversed by the
+  Obsidian community-store automated checker as of v0.1.2 — it now
+  warns on `activeWindow.setTimeout` / `activeWindow.clearTimeout`
+  and asks for `window.*` instead. TypeScript: `let timer: number |
+  null = null` is still correct (the return type is `number` in
+  browser context, not `NodeJS.Timeout`).
 - **`obsidianmd/prefer-create-el`** — `el.createEl('div', opts)` should
   be `el.createDiv(opts)`. Same for `'span'` → `createSpan`.
 - **`obsidianmd/rule-custom-message` (no-console)** — only
