@@ -19,7 +19,7 @@
 import { requestUrl, type RequestUrlResponse } from "obsidian";
 
 export const DEFAULT_BASE = "https://scholar-sidekick.com";
-export const CLIENT_TAG = "scholar-sidekick-obsidian/0.2.0";
+export const CLIENT_TAG = "scholar-sidekick-obsidian/0.2.1";
 
 const TIMEOUT_MS = 15_000;
 const STYLES_TIMEOUT_MS = 6_000;
