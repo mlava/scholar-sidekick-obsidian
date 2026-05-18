@@ -11,7 +11,7 @@
 
 import { App, Editor, Modal, Notice } from "obsidian";
 
-import type { OaPayload, RetractionPayload } from "../lib/api";
+import { describeCheckReason, type OaPayload, type RetractionPayload } from "../lib/api";
 import type { IdentifierMatch } from "../lib/detect";
 
 export type CheckKind = "retraction" | "oa";
@@ -26,9 +26,7 @@ export type OaRow = {
   result: { ok: true; data: OaPayload } | { ok: false; status: number; message: string };
 };
 
-type Rows =
-  | { kind: "retraction"; rows: RetractionRow[] }
-  | { kind: "oa"; rows: OaRow[] };
+type Rows = { kind: "retraction"; rows: RetractionRow[] } | { kind: "oa"; rows: OaRow[] };
 
 type MergedRetractionRow = {
   identifiers: IdentifierMatch[];
@@ -62,7 +60,8 @@ export class CheckResultsModal extends Modal {
     contentEl.addClass("scholar-sidekick-check-modal");
 
     contentEl.createEl("h2", {
-      text: this.rows.kind === "retraction" ? "Retraction check results" : "Open access check results",
+      text:
+        this.rows.kind === "retraction" ? "Retraction check results" : "Open access check results",
     });
 
     if (this.merged.rows.length === 0) {
@@ -148,7 +147,7 @@ export class CheckResultsModal extends Modal {
     if (!payload.result) {
       statusCell.appendChild(buildPill("unknown"));
       tr.createEl("td", { text: "—" });
-      tr.createEl("td", { text: "No DOI resolved." });
+      tr.createEl("td", { text: describeCheckReason(payload.reason) });
       return;
     }
     const r = payload.result;
@@ -197,7 +196,7 @@ export class CheckResultsModal extends Modal {
     if (!payload.result) {
       statusCell.appendChild(buildPill("unknown"));
       tr.createEl("td", { text: "—" });
-      tr.createEl("td", { text: "No DOI resolved." });
+      tr.createEl("td", { text: describeCheckReason(payload.reason) });
       return;
     }
     const r = payload.result;
@@ -372,7 +371,7 @@ function identifiersLabel(ids: IdentifierMatch[]): string {
 function formatRetractionMarkdown(row: MergedRetractionRow): string {
   const id = identifiersLabel(row.identifiers);
   if (!row.result.ok) return `${id} — error: ${row.result.message}`;
-  if (!row.result.data.result) return `${id} — no DOI resolved.`;
+  if (!row.result.data.result) return `${id} — ${describeCheckReason(row.result.data.reason)}`;
   const r = row.result.data.result;
   if (r.isRetracted) {
     const n = r.notices[0];
@@ -387,7 +386,7 @@ function formatRetractionMarkdown(row: MergedRetractionRow): string {
 function formatOaMarkdown(row: MergedOaRow): string {
   const id = identifiersLabel(row.identifiers);
   if (!row.result.ok) return `${id} — error: ${row.result.message}`;
-  if (!row.result.data.result) return `${id} — no DOI resolved.`;
+  if (!row.result.data.result) return `${id} — ${describeCheckReason(row.result.data.reason)}`;
   const r = row.result.data.result;
   if (r.isOa && r.bestLocation?.url) {
     const license = r.bestLocation.license ? ` · ${r.bestLocation.license}` : "";

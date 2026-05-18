@@ -19,7 +19,7 @@
 import { requestUrl, type RequestUrlResponse } from "obsidian";
 
 export const DEFAULT_BASE = "https://scholar-sidekick.com";
-export const CLIENT_TAG = "scholar-sidekick-obsidian/0.2.1";
+export const CLIENT_TAG = "scholar-sidekick-obsidian/0.2.2";
 
 const TIMEOUT_MS = 15_000;
 const STYLES_TIMEOUT_MS = 6_000;
@@ -87,6 +87,15 @@ export type BatchResult =
     }
   | { ok: false; status: number; message: string; retryAfterSec?: number };
 
+/**
+ * Three failure modes can land in the same shape (result: null). Clients
+ * should differentiate UX based on `reason`:
+ *   - "no_doi"   — resolver succeeded, paper genuinely has no DOI
+ *   - "timeout"  — upstream resolver (arXiv, PubMed, …) timed out; retry
+ *   - "upstream" — upstream resolver returned an error; may retry
+ */
+export type CheckReason = "no_doi" | "timeout" | "upstream";
+
 export type RetractionPayload = {
   doi: string | null;
   resolvedFrom?: { type: string; value: string };
@@ -103,7 +112,7 @@ export type RetractionPayload = {
     }>;
     title: string | null;
   } | null;
-  reason?: "no_doi";
+  reason?: CheckReason;
   requestId?: string | null;
 };
 
@@ -127,9 +136,22 @@ export type OaPayload = {
       version: string | null;
     }>;
   } | null;
-  reason?: "no_doi";
+  reason?: CheckReason;
   requestId?: string | null;
 };
+
+/** Human-friendly explanation of a CheckReason for inline display. */
+export function describeCheckReason(reason: CheckReason | undefined): string {
+  switch (reason) {
+    case "timeout":
+      return "Upstream resolver timed out. Try again in a moment.";
+    case "upstream":
+      return "Upstream resolver returned an error. Try again in a moment.";
+    case "no_doi":
+    default:
+      return "No DOI resolved for this identifier.";
+  }
+}
 
 export type VerifyVerdict = "matched" | "mismatch" | "not_found" | "ambiguous" | "parsing_error";
 export type VerifyConfidence = "high" | "medium" | "low";
@@ -586,7 +608,8 @@ async function postJsonCheck<T>(
   });
   if (!isResponse(res)) {
     if (res.__error === "abort") return { ok: false, status: 0, message: "Request cancelled." };
-    if (res.__error === "timeout") return { ok: false, status: 0, message: "Timed out. Try again." };
+    if (res.__error === "timeout")
+      return { ok: false, status: 0, message: "Timed out. Try again." };
     return {
       ok: false,
       status: 0,
@@ -629,12 +652,7 @@ export async function checkOpenAccess(
 ): Promise<CheckResult<OaPayload>> {
   const base = opts.baseUrl ?? DEFAULT_BASE;
   const trimmed = trimToBytes(id).slice(0, 500);
-  return postJsonCheck<OaPayload>(
-    `${base}/api/oa-check`,
-    { id: trimmed },
-    TIMEOUT_MS,
-    opts.signal,
-  );
+  return postJsonCheck<OaPayload>(`${base}/api/oa-check`, { id: trimmed }, TIMEOUT_MS, opts.signal);
 }
 
 /**

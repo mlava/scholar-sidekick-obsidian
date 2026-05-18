@@ -15,18 +15,18 @@ sources (Crossref, NCBI, arXiv, Open Library, ADS, WHO IRIS).
 
 ## Commands
 
-| Command                                          | What it does                                                                                                                            |
-| ------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------- |
-| **Format selection as citation**                 | Wraps the selected text (an identifier or text containing one) in a citation in your default style.                                     |
-| **Replace identifier at caret with citation**    | Detects the identifier under or near the caret and replaces it (or appends, by setting). No selection required.                         |
-| **Insert citation…**                             | Opens a modal: type/paste an identifier, pick from 5 quick styles or search 10,000+ CSL styles, insert at caret.                        |
-| **Export note citations to bibtex**              | Scans the active note for every identifier and saves a `.bib` file next to the note - ready to import into Zotero / Mendeley / EndNote. |
-| **Export note citations to ris**                 | Same, but RIS format.                                                                                                                   |
-| **Check identifier at caret for retraction**     | Sends the identifier nearest the caret to the retraction checker (Crossref + Retraction Watch) and surfaces the result via a `Notice`.   |
-| **Check identifier at caret for open access**    | Sends the identifier nearest the caret to the open-access checker (Unpaywall) and surfaces status + best legal copy via a `Notice`.      |
-| **Check note citations for retractions**         | Scans the active note, dedupes identifiers, and opens a modal table with retraction status per item. Optional "Append summary at caret". |
-| **Check note citations for open access**         | Same, for open-access status. Modal lists each best legal copy link.                                                                     |
-| **Verify selected citation**                     | Opens a verifier modal pre-filled from the selection. Cross-checks the claimed title + identifier against Crossref, PubMed, OpenAlex.    |
+| Command                                       | What it does                                                                                                                             |
+| --------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| **Format selection as citation**              | Wraps the selected text (an identifier or text containing one) in a citation in your default style.                                      |
+| **Replace identifier at caret with citation** | Detects the identifier under or near the caret and replaces it (or appends, by setting). No selection required.                          |
+| **Insert citation…**                          | Opens a modal: type/paste an identifier, pick from 5 quick styles or search 10,000+ CSL styles, insert at caret.                         |
+| **Export note citations to bibtex**           | Scans the active note for every identifier and saves a `.bib` file next to the note - ready to import into Zotero / Mendeley / EndNote.  |
+| **Export note citations to ris**              | Same, but RIS format.                                                                                                                    |
+| **Check identifier at caret for retraction**  | Sends the identifier nearest the caret to the retraction checker (Crossref + Retraction Watch) and surfaces the result via a `Notice`.   |
+| **Check identifier at caret for open access** | Sends the identifier nearest the caret to the open-access checker (Unpaywall) and surfaces status + best legal copy via a `Notice`.      |
+| **Check note citations for retractions**      | Scans the active note, dedupes identifiers, and opens a modal table with retraction status per item. Optional "Append summary at caret". |
+| **Check note citations for open access**      | Same, for open-access status. Modal lists each best legal copy link.                                                                     |
+| **Verify selected citation**                  | Opens a verifier modal pre-filled from the selection. Cross-checks the claimed title + identifier against Crossref, PubMed, OpenAlex.    |
 
 ## Supported identifiers
 

@@ -3,6 +3,7 @@ import { Editor, MarkdownView, Notice, Plugin, TFile } from "obsidian";
 import {
   checkOpenAccess,
   checkRetraction,
+  describeCheckReason,
   exportCitations,
   type CheckKind,
   type CheckResult,
@@ -130,7 +131,8 @@ export default class ScholarSidekickPlugin extends Plugin {
     }
     this.logHeaders("format-selection", result.requestId, result.transformVersion);
     editor.replaceSelection(result.text);
-    const warnings = result.warnings.length > 0 ? `Inserted (warnings: ${result.warnings.join("; ")})` : null;
+    const warnings =
+      result.warnings.length > 0 ? `Inserted (warnings: ${result.warnings.join("; ")})` : null;
     const checkSummary = summariseFormatChecks(result.items);
     if (warnings && checkSummary) new Notice(`${warnings}\n${checkSummary}`);
     else if (warnings) new Notice(warnings);
@@ -197,7 +199,9 @@ export default class ScholarSidekickPlugin extends Plugin {
       new Notice("No identifier found near the caret. Try selecting it first.");
       return;
     }
-    new Notice(`Checking ${kind === "retraction" ? "retraction" : "open access"} for ${match.value}…`);
+    new Notice(
+      `Checking ${kind === "retraction" ? "retraction" : "open access"} for ${match.value}…`,
+    );
     const checker = kind === "retraction" ? checkRetraction : checkOpenAccess;
     const result = await checker(match.value, { baseUrl: this.settings.apiBaseUrl });
     if (!result.ok) {
@@ -214,7 +218,9 @@ export default class ScholarSidekickPlugin extends Plugin {
       new Notice("No identifiers found in this note.");
       return;
     }
-    new Notice(`Scanning ${identifiers.length} identifier${identifiers.length === 1 ? "" : "s"} for ${kind === "retraction" ? "retractions" : "open access"}…`);
+    new Notice(
+      `Scanning ${identifiers.length} identifier${identifiers.length === 1 ? "" : "s"} for ${kind === "retraction" ? "retractions" : "open access"}…`,
+    );
     if (kind === "retraction") {
       const rows = await runConcurrent(identifiers, (id) =>
         checkRetraction(id.value, { baseUrl: this.settings.apiBaseUrl }).then(
@@ -291,19 +297,19 @@ function dedupeIdentifiers(matches: IdentifierMatch[]): IdentifierMatch[] {
   return out;
 }
 
-async function runConcurrent<T, U>(
-  items: T[],
-  fn: (item: T) => Promise<U>,
-): Promise<U[]> {
+async function runConcurrent<T, U>(items: T[], fn: (item: T) => Promise<U>): Promise<U[]> {
   const out: U[] = new Array(items.length);
   let next = 0;
-  const workers = Array.from({ length: Math.min(NOTE_CHECK_CONCURRENCY, items.length) }, async () => {
-    while (next < items.length) {
-      const idx = next;
-      next += 1;
-      out[idx] = await fn(items[idx]);
-    }
-  });
+  const workers = Array.from(
+    { length: Math.min(NOTE_CHECK_CONCURRENCY, items.length) },
+    async () => {
+      while (next < items.length) {
+        const idx = next;
+        next += 1;
+        out[idx] = await fn(items[idx]);
+      }
+    },
+  );
   await Promise.all(workers);
   return out;
 }
@@ -314,7 +320,7 @@ function formatSingleCheckNotice(
 ): string {
   if (kind === "retraction") {
     const payload = result.data as RetractionPayload;
-    if (!payload.result) return "No DOI resolved for this identifier.";
+    if (!payload.result) return describeCheckReason(payload.reason);
     const r = payload.result;
     if (r.isRetracted) {
       const n = r.notices[0];
@@ -326,7 +332,7 @@ function formatSingleCheckNotice(
     return "OK — no retractions or notices found.";
   }
   const payload = result.data as OaPayload;
-  if (!payload.result) return "No DOI resolved for this identifier.";
+  if (!payload.result) return describeCheckReason(payload.reason);
   const r = payload.result;
   if (r.isOa) {
     const license = r.bestLocation?.license ? ` · ${r.bestLocation.license}` : "";
@@ -336,12 +342,14 @@ function formatSingleCheckNotice(
   return "CLOSED — no open-access copy found.";
 }
 
-function summariseFormatChecks(items?: Array<{
-  _checks?: {
-    retraction?: { status?: string; notices?: Array<{ label?: string; date?: string | null }> };
-    open_access?: { status?: string; best_url?: string };
-  };
-}>): string | null {
+function summariseFormatChecks(
+  items?: Array<{
+    _checks?: {
+      retraction?: { status?: string; notices?: Array<{ label?: string; date?: string | null }> };
+      open_access?: { status?: string; best_url?: string };
+    };
+  }>,
+): string | null {
   if (!items?.length) return null;
   const parts: string[] = [];
   for (const item of items) {
