@@ -261,3 +261,16 @@ Re-do for 0.2.0 release:
       this branch).
 - [ ] `npm run release` to mirror, tag, and trigger the GitHub Actions
       release workflow in `mlava/scholar-sidekick-obsidian`.
+
+## 0.2.1 release notes
+
+Hot-fix for 0.2.0: the new `src/modals/check-results.ts` and
+`src/modals/verify-citation.ts` files were never mirrored to the public
+release repo because `scripts/sync-to-public.mjs` uses an explicit
+`SOURCE_FILES` allowlist that wasn't updated alongside the new modals.
+The 0.2.0 release-workflow tsc step failed with
+`TS2307: Cannot find module './modals/check-results'`. Fix in
+`scripts/sync-to-public.mjs`: added both modal paths to `SOURCE_FILES`
+and added a comment warning future contributors that every new `src/`
+file needs an entry here. Bumping past 0.2.0 lets the GitHub Actions
+release workflow re-run cleanly against a fresh tag.
