@@ -243,7 +243,7 @@ Shipped:
 - `X-Scholar-Client` handshake bumped to `scholar-sidekick-obsidian/0.2.0`.
 - `screen_with_llm` intentionally not exposed — gated to paid callers at
   the server; anonymous-tier plugin would only receive `400
-  LLM_SCREEN_FORBIDDEN`.
+LLM_SCREEN_FORBIDDEN`.
 
 Re-do for 0.2.0 release:
 
@@ -274,3 +274,19 @@ The 0.2.0 release-workflow tsc step failed with
 and added a comment warning future contributors that every new `src/`
 file needs an entry here. Bumping past 0.2.0 lets the GitHub Actions
 release workflow re-run cleanly against a fresh tag.
+
+## 0.2.2 release notes
+
+Shipped:
+
+- "Open in web verifier" button in the verify-citation modal now passes
+  structured pre-fill params (`?title=…&author=…&year=…&container=…` plus
+  the identifier under its correct type key) instead of opening a blank
+  verifier page. The web verifier reads the params on mount and pre-fills
+  every field — user clicks Verify without retyping anything.
+- `X-Scholar-Client` handshake bumped to `scholar-sidekick-obsidian/0.2.2`.
+
+The plugin's local verifier modal is unchanged; this only affects the
+escalate-to-web handoff. No server contract change — uses the existing
+`/tools/citation-verifier` page with the new (also shipped this release)
+deep-link query-param support.

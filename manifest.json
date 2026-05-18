@@ -1,7 +1,7 @@
 {
   "id": "scholar-sidekick",
   "name": "Scholar Sidekick — Cite from any identifier",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "minAppVersion": "1.5.0",
   "description": "Paste a DOI, PMID, ISBN, or arXiv ID and replace it with a formatted citation. 10,000+ CSL styles. Check retraction and open-access status. Verify suspect citations. No reference manager required.",
   "author": "Mark Lavercombe",

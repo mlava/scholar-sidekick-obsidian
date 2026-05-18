@@ -7,12 +7,7 @@
 
 import { App, Modal, Notice, Setting } from "obsidian";
 
-import {
-  DEFAULT_BASE,
-  verifyCitation,
-  type VerifyClaim,
-  type VerifyPayload,
-} from "../lib/api";
+import { DEFAULT_BASE, verifyCitation, type VerifyClaim, type VerifyPayload } from "../lib/api";
 import { findAllIdentifiers } from "../lib/detect";
 import type { ScholarSidekickSettings } from "../types";
 
@@ -234,7 +229,9 @@ export class VerifyCitationModal extends Modal {
       const firstAuthor = matched.authors?.[0];
       addRow(
         "First author",
-        firstAuthor ? `${firstAuthor.family ?? ""}${firstAuthor.given ? ", " + firstAuthor.given : ""}` : null,
+        firstAuthor
+          ? `${firstAuthor.family ?? ""}${firstAuthor.given ? ", " + firstAuthor.given : ""}`
+          : null,
       );
       addRow("Year", matched.issued?.year ? String(matched.issued.year) : null);
       addRow("Container", matched.container?.title ?? null);
@@ -279,7 +276,20 @@ export class VerifyCitationModal extends Modal {
 
   private openWebVerifier(): void {
     const base = this.settings.apiBaseUrl || DEFAULT_BASE;
-    window.open(`${base}/tools/citation-verifier`, "_blank", "noopener");
+    const url = new URL(`${base}/tools/citation-verifier`);
+    // Hand off whatever the user has typed so far as structured params —
+    // the web verifier reads these on mount and pre-fills the form. This
+    // is the "escalate to the full UX" path: user typed enough into the
+    // plugin modal to want a richer view (more candidates, history, etc.)
+    // but doesn't want to retype the claim.
+    if (this.claim.title.trim()) url.searchParams.set("title", this.claim.title.trim());
+    if (this.claim.family.trim()) url.searchParams.set("author", this.claim.family.trim());
+    if (this.claim.year.trim()) url.searchParams.set("year", this.claim.year.trim());
+    if (this.claim.container.trim()) url.searchParams.set("container", this.claim.container.trim());
+    if (this.claim.identifierValue.trim()) {
+      url.searchParams.set(this.claim.identifierKind, this.claim.identifierValue.trim());
+    }
+    window.open(url.toString(), "_blank", "noopener");
   }
 }
 

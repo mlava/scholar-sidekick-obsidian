@@ -85,10 +85,18 @@
   font-weight: 600;
 }
 
-.scholar-sidekick-check-table col.identifier { width: 26%; }
-.scholar-sidekick-check-table col.status     { width: 12%; }
-.scholar-sidekick-check-table col.doi        { width: 26%; }
-.scholar-sidekick-check-table col.detail     { width: 36%; }
+.scholar-sidekick-check-table col.identifier {
+  width: 26%;
+}
+.scholar-sidekick-check-table col.status {
+  width: 12%;
+}
+.scholar-sidekick-check-table col.doi {
+  width: 26%;
+}
+.scholar-sidekick-check-table col.detail {
+  width: 36%;
+}
 
 .scholar-sidekick-check-summary {
   font-size: 0.85em;
