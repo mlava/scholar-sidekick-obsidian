@@ -290,3 +290,15 @@ The plugin's local verifier modal is unchanged; this only affects the
 escalate-to-web handoff. No server contract change — uses the existing
 `/tools/citation-verifier` page with the new (also shipped this release)
 deep-link query-param support.
+
+## 0.2.3 release notes
+
+Lint patch to clear the Obsidian plugin scorecard `:has` warning
+("Avoid `:has` — it can cause significant performance issues due to
+broad selector invalidation"). The check-results modal previously
+widened its outer `.modal` wrapper via `.modal:has(.scholar-sidekick-check-modal)`;
+now `CheckResultsModal.onOpen()` adds a `scholar-sidekick-check-modal-wide`
+class to `this.modalEl` directly and CSS targets the class. No
+behavioural change — modal still renders at `min(960px, 92vw)`.
+
+- `X-Scholar-Client` handshake bumped to `scholar-sidekick-obsidian/0.2.3`.

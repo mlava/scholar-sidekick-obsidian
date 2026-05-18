@@ -46,7 +46,7 @@
  * viewport so wide displays get a comfortable read, but cap so it doesn't
  * span the whole screen on ultrawides.
  */
-.modal:has(.scholar-sidekick-check-modal) {
+.scholar-sidekick-check-modal-wide {
   width: min(960px, 92vw);
 }
 
