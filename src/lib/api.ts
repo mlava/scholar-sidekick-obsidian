@@ -19,7 +19,7 @@
 import { requestUrl, type RequestUrlResponse } from "obsidian";
 
 export const DEFAULT_BASE = "https://scholar-sidekick.com";
-export const CLIENT_TAG = "scholar-sidekick-obsidian/0.1.0";
+export const CLIENT_TAG = "scholar-sidekick-obsidian/0.2.0";
 
 const TIMEOUT_MS = 15_000;
 const STYLES_TIMEOUT_MS = 6_000;
@@ -30,13 +30,38 @@ export const BUILTIN_STYLES = ["vancouver", "apa", "ama", "ieee", "cse"] as cons
 export type BuiltinStyle = (typeof BUILTIN_STYLES)[number];
 
 export type OutputMode = "text" | "html" | "json";
+export type CheckKind = "retraction" | "oa";
 
 export interface FormatOptions {
   baseUrl?: string;
   output?: OutputMode;
   provenance?: boolean;
+  checks?: CheckKind[];
   signal?: AbortSignal;
 }
+
+export type FormatItemRetraction = {
+  status: "ok" | "retracted" | "concern" | "correction" | "unknown";
+  notices?: Array<{ type?: string; label?: string; date?: string | null }>;
+  error?: { code?: string; message?: string };
+};
+
+export type FormatItemOpenAccess = {
+  status: "open" | "closed" | "unknown";
+  oa_status?: "gold" | "green" | "hybrid" | "bronze" | "closed";
+  best_url?: string;
+  license?: string | null;
+  version?: string | null;
+  error?: { code?: string; message?: string };
+};
+
+export type FormatItem = {
+  idx?: number;
+  _checks?: {
+    retraction?: FormatItemRetraction;
+    open_access?: FormatItemOpenAccess;
+  };
+};
 
 export type FormatResult =
   | {
@@ -46,6 +71,7 @@ export type FormatResult =
       warnings: string[];
       requestId: string | null;
       transformVersion: string | null;
+      items?: FormatItem[];
     }
   | { ok: false; status: number; message: string; retryAfterSec?: number };
 
@@ -57,7 +83,121 @@ export type BatchResult =
       warnings: string[];
       requestId: string | null;
       transformVersion: string | null;
+      items?: FormatItem[];
     }
+  | { ok: false; status: number; message: string; retryAfterSec?: number };
+
+export type RetractionPayload = {
+  doi: string | null;
+  resolvedFrom?: { type: string; value: string };
+  result: {
+    isRetracted: boolean;
+    hasCorrections: boolean;
+    hasConcern: boolean;
+    notices: Array<{
+      type: string;
+      label: string;
+      doi: string | null;
+      date: string | null;
+      source: string | null;
+    }>;
+    title: string | null;
+  } | null;
+  reason?: "no_doi";
+  requestId?: string | null;
+};
+
+export type OaPayload = {
+  doi: string | null;
+  resolvedFrom?: { type: string; value: string };
+  result: {
+    isOa: boolean;
+    oaStatus: "gold" | "green" | "hybrid" | "bronze" | "closed";
+    title: string | null;
+    bestLocation: {
+      url: string;
+      hostType: string;
+      license: string | null;
+      version: string | null;
+    } | null;
+    locations: Array<{
+      url: string;
+      hostType: string;
+      license: string | null;
+      version: string | null;
+    }>;
+  } | null;
+  reason?: "no_doi";
+  requestId?: string | null;
+};
+
+export type VerifyVerdict = "matched" | "mismatch" | "not_found" | "ambiguous" | "parsing_error";
+export type VerifyConfidence = "high" | "medium" | "low";
+
+export type VerifyAuthor = { family: string; given?: string };
+
+export type VerifyClaim = {
+  title?: string;
+  authors?: VerifyAuthor[];
+  year?: number;
+  container?: string;
+  doi?: string;
+  pmid?: string;
+  pmcid?: string;
+  isbn?: string;
+  arxiv?: string;
+  issn?: string;
+  ads?: string;
+  whoIrisUrl?: string;
+};
+
+export type VerifyMismatch = {
+  field: "title" | "first_author" | "year" | "container";
+  claimed: string | number | null;
+  resolved: string | number | null;
+  similarity: number;
+};
+
+export type VerifyCandidate = {
+  item: Record<string, unknown> & {
+    title?: string;
+    authors?: Array<{ family?: string; given?: string }>;
+    issued?: { year?: number };
+    container?: { title?: string };
+    identifiers?: Array<{ type: string; value: string }>;
+  };
+  registries: string[];
+  score: number;
+};
+
+export type VerifyProvenance = {
+  stages_run: Array<"compare" | "search" | "llm_screen">;
+  resolved_via: string | null;
+  registries_searched?: Array<{ registry: string; ok: boolean; count: number; reason?: string }>;
+  llm_screen?: {
+    applied: boolean;
+    model?: string;
+    prompt_version?: string;
+    verdict?: string;
+    reasoning?: string;
+    cost_usd?: number;
+    reason?: string;
+  };
+  skipped_reason?: "insufficient_claim";
+};
+
+export type VerifyPayload = {
+  verdict: VerifyVerdict;
+  confidence: VerifyConfidence;
+  matched: VerifyCandidate["item"] | null;
+  mismatches: VerifyMismatch[];
+  candidates?: VerifyCandidate[];
+  _provenance: VerifyProvenance;
+  requestId?: string | null;
+};
+
+export type CheckResult<T> =
+  | { ok: true; data: T }
   | { ok: false; status: number; message: string; retryAfterSec?: number };
 
 export type ExportResult =
@@ -96,6 +236,13 @@ function withQuery(base: string, path: string, params?: Record<string, string>):
   const url = new URL(path, base);
   if (params) for (const [k, v] of Object.entries(params)) url.searchParams.set(k, v);
   return url.toString();
+}
+
+function formatQueryParams(opts: FormatOptions): Record<string, string> | undefined {
+  const params: Record<string, string> = {};
+  if (opts.provenance) params.provenance = "1";
+  if (opts.checks?.length) params.checks = opts.checks.join(",");
+  return Object.keys(params).length ? params : undefined;
 }
 
 function header(res: RequestUrlResponse, name: string): string | null {
@@ -217,13 +364,13 @@ export async function formatCitation(
   const output = opts.output ?? "text";
   const trimmed = trimToBytes(text);
 
-  const url = withQuery(base, "/api/format", opts.provenance ? { provenance: "1" } : undefined);
+  const url = withQuery(base, "/api/format", formatQueryParams(opts));
   const res = await doRequest({
     method: "POST",
     url,
     body: JSON.stringify({ text: trimmed, style, output }),
     contentType: "application/json",
-    timeoutMs: TIMEOUT_MS,
+    timeoutMs: opts.checks?.length ? EXPORT_TIMEOUT_MS : TIMEOUT_MS,
     signal: opts.signal,
   });
 
@@ -248,6 +395,7 @@ export async function formatCitation(
     html?: string;
     styleUsed?: string;
     warnings?: string[];
+    items?: FormatItem[];
   };
   // Builtin formatters (vancouver/ama/apa/ieee/cse) only emit text; the CSL
   // engine emits both. Prefer whichever was requested, but fall back so an
@@ -264,6 +412,7 @@ export async function formatCitation(
     warnings: json.warnings ?? [],
     requestId: header(res, "x-request-id"),
     transformVersion: header(res, "x-scholar-transform-version"),
+    items: Array.isArray(json.items) ? json.items : undefined,
   };
 }
 
@@ -286,7 +435,7 @@ export async function formatBatch(
   const base = opts.baseUrl ?? DEFAULT_BASE;
   const output = opts.output ?? "text";
 
-  const url = withQuery(base, "/api/format", opts.provenance ? { provenance: "1" } : undefined);
+  const url = withQuery(base, "/api/format", formatQueryParams(opts));
   const res = await doRequest({
     method: "POST",
     url,
@@ -317,6 +466,7 @@ export async function formatBatch(
     html?: string;
     styleUsed?: string;
     warnings?: string[];
+    items?: FormatItem[];
   };
   if (!json.ok) return { ok: false, status: res.status, message: "Couldn't format the batch." };
 
@@ -329,6 +479,7 @@ export async function formatBatch(
     warnings: json.warnings ?? [],
     requestId: header(res, "x-request-id"),
     transformVersion: header(res, "x-scholar-transform-version"),
+    items: Array.isArray(json.items) ? json.items : undefined,
   };
 }
 
@@ -417,4 +568,87 @@ export async function searchStyles(
   const json = res.json as { ok?: boolean; styles?: StyleEntry[] };
   if (!json.ok || !Array.isArray(json.styles)) return [];
   return json.styles;
+}
+
+async function postJsonCheck<T>(
+  url: string,
+  body: unknown,
+  timeoutMs: number,
+  signal?: AbortSignal,
+): Promise<CheckResult<T>> {
+  const res = await doRequest({
+    method: "POST",
+    url,
+    body: JSON.stringify(body),
+    contentType: "application/json",
+    timeoutMs,
+    signal,
+  });
+  if (!isResponse(res)) {
+    if (res.__error === "abort") return { ok: false, status: 0, message: "Request cancelled." };
+    if (res.__error === "timeout") return { ok: false, status: 0, message: "Timed out. Try again." };
+    return {
+      ok: false,
+      status: 0,
+      message: "Couldn't reach scholar-sidekick.com — check your connection.",
+    };
+  }
+  if (res.status === 429) return rateLimitedError(res);
+  if (res.status < 200 || res.status >= 300) {
+    return { ok: false, status: res.status, message: readError(res) };
+  }
+  const json = res.json as { ok?: boolean } & T;
+  if (!json?.ok) {
+    return { ok: false, status: res.status, message: "Check returned no result." };
+  }
+  // Attach the request id so callers can log it the same way they log
+  // format/export request ids.
+  const rid = header(res, "x-request-id");
+  return { ok: true, data: { ...(json as object), requestId: rid } as T };
+}
+
+/** Check whether a single identifier has been retracted, corrected, or flagged. */
+export async function checkRetraction(
+  id: string,
+  opts: { baseUrl?: string; signal?: AbortSignal } = {},
+): Promise<CheckResult<RetractionPayload>> {
+  const base = opts.baseUrl ?? DEFAULT_BASE;
+  const trimmed = trimToBytes(id).slice(0, 500);
+  return postJsonCheck<RetractionPayload>(
+    `${base}/api/retraction-check`,
+    { id: trimmed },
+    TIMEOUT_MS,
+    opts.signal,
+  );
+}
+
+/** Check whether a single identifier is openly accessible (Unpaywall). */
+export async function checkOpenAccess(
+  id: string,
+  opts: { baseUrl?: string; signal?: AbortSignal } = {},
+): Promise<CheckResult<OaPayload>> {
+  const base = opts.baseUrl ?? DEFAULT_BASE;
+  const trimmed = trimToBytes(id).slice(0, 500);
+  return postJsonCheck<OaPayload>(
+    `${base}/api/oa-check`,
+    { id: trimmed },
+    TIMEOUT_MS,
+    opts.signal,
+  );
+}
+
+/**
+ * Verify a claimed citation against authoritative metadata. Single-claim
+ * only — the server has no batch endpoint. `screen_with_llm` is gated to
+ * paid / first-party callers and is not exposed by the plugin (anonymous
+ * callers would receive a 400 LLM_SCREEN_FORBIDDEN).
+ */
+export async function verifyCitation(
+  claimed: VerifyClaim,
+  opts: { baseUrl?: string; bypassCache?: boolean; signal?: AbortSignal } = {},
+): Promise<CheckResult<VerifyPayload>> {
+  const base = opts.baseUrl ?? DEFAULT_BASE;
+  const body: { claimed: VerifyClaim; options?: { bypassCache?: boolean } } = { claimed };
+  if (opts.bypassCache) body.options = { bypassCache: true };
+  return postJsonCheck<VerifyPayload>(`${base}/api/verify`, body, EXPORT_TIMEOUT_MS, opts.signal);
 }

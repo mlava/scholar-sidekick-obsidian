@@ -65,13 +65,25 @@ export class ScholarSidekickSettingTab extends PluginSettingTab {
       );
 
     new Setting(containerEl)
-      .setName("Show sources & conflicts (experimental)")
+      .setName("Include source provenance")
       .setDesc(
-        "Sends ?provenance=1 with each request. Surfaces which upstream source supplied each field. Currently a no-op against the production API; activates with a future server release.",
+        "Sends ?provenance=1 with each citation request. Adds the upstream registry (Crossref / PubMed / DataCite / etc.), fetch timestamp, and transform version to each item so you can see where the metadata came from.",
       )
       .addToggle((tog) =>
         tog.setValue(this.plugin.settings.provenance).onChange(async (value) => {
           this.plugin.settings.provenance = value;
+          await this.plugin.saveSettings();
+        }),
+      );
+
+    new Setting(containerEl)
+      .setName("Include safety checks (retraction + open access)")
+      .setDesc(
+        "Sends ?checks=retraction,oa with each citation request. Adds retraction status (Crossref + Retraction Watch) and open-access status (Unpaywall) to each item. Adds a few seconds of latency per request.",
+      )
+      .addToggle((tog) =>
+        tog.setValue(this.plugin.settings.checksEnabled).onChange(async (value) => {
+          this.plugin.settings.checksEnabled = value;
           await this.plugin.saveSettings();
         }),
       );
