@@ -58,6 +58,7 @@ export class CheckResultsModal extends Modal {
     const { contentEl } = this;
     contentEl.empty();
     contentEl.addClass("scholar-sidekick-check-modal");
+    this.modalEl.addClass("scholar-sidekick-check-modal-wide");
 
     contentEl.createEl("h2", {
       text:
