@@ -6,6 +6,7 @@ export interface ScholarSidekickSettings {
   outputMode: OutputMode;
   replaceMode: "replace" | "append";
   provenance: boolean;
+  checksEnabled: boolean;
   apiBaseUrl: string;
 }
 
@@ -14,5 +15,6 @@ export const DEFAULT_SETTINGS: ScholarSidekickSettings = {
   outputMode: "text",
   replaceMode: "replace",
   provenance: false,
+  checksEnabled: false,
   apiBaseUrl: "https://scholar-sidekick.com",
 };
