@@ -60,7 +60,6 @@ sync with the canonical patterns.
   `?checks=retraction,oa` so each formatted citation arrives alongside its
   retraction status (Crossref + Retraction Watch) and open-access status
   (Unpaywall). Off by default; adds a few seconds of latency per request.
-- **API base URL** - override only for staging or self-hosted instances.
 
 ## Privacy
 

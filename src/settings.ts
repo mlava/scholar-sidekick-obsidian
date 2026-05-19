@@ -87,18 +87,5 @@ export class ScholarSidekickSettingTab extends PluginSettingTab {
           await this.plugin.saveSettings();
         }),
       );
-
-    new Setting(containerEl)
-      .setName("API base URL")
-      .setDesc("Override only if you're testing against a staging or self-hosted instance.")
-      .addText((text) =>
-        text
-          .setPlaceholder("https://scholar-sidekick.com")
-          .setValue(this.plugin.settings.apiBaseUrl)
-          .onChange(async (value) => {
-            this.plugin.settings.apiBaseUrl = value.trim() || "https://scholar-sidekick.com";
-            await this.plugin.saveSettings();
-          }),
-      );
   }
 }
