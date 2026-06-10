@@ -3,3 +3,6 @@ main.js
 main.js.map
 data.json
 .DS_Store
+
+# internal submission/release notes — not for the public repo
+SUBMISSION.md
