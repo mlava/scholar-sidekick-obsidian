@@ -70,7 +70,9 @@ sync with the canonical patterns.
   `https://scholar-sidekick.com/api/oa-check`, or
   `https://scholar-sidekick.com/api/verify` over HTTPS.
 - No API key is required; the API treats the plugin as the anonymous
-  rate-limited tier (60 requests / minute / IP).
+  rate-limited tier. Limits are per endpoint, per IP: **10 requests / minute**
+  for formatting and export, **60 requests / minute** for the retraction,
+  open-access, and verify checks.
 - Inputs are not retained or used for training. See the API
   [privacy policy](https://scholar-sidekick.com/legal/privacy).
 

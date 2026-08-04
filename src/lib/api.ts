@@ -153,7 +153,7 @@ export function describeCheckReason(reason: CheckReason | undefined): string {
   }
 }
 
-export type VerifyVerdict = "matched" | "mismatch" | "not_found" | "ambiguous" | "parsing_error";
+export type VerifyVerdict = "matched" | "mismatch" | "not_found" | "ambiguous";
 export type VerifyConfidence = "high" | "medium" | "low";
 
 export type VerifyAuthor = { family: string; given?: string };

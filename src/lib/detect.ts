@@ -17,7 +17,7 @@
 // detector compares the canonical string form of each RegExp.
 
 export const DOI_URL_RE = /\bhttps?:\/\/(?:dx\.)?doi\.org\/([^?#\s<>"']+)/gi;
-export const DOI_RE = /\b10\.\d{4,9}\/[-._;()/:A-Z0-9]+/gi;
+export const DOI_RE = /\b10\.\d{4,9}\/[-._;()/:<>A-Z0-9]+/gi;
 export const PMID_RE = /\bPMID\s*[:#-]?\s*(\d+)\b/gi;
 export const PUBMED_WORD_RE = /\bpubmed\s*[:#-]?\s*(\d{3,9})\b/gi;
 export const PUBMED_URL_RE = /\bhttps?:\/\/pubmed\.ncbi\.nlm\.nih\.gov\/(\d+)\/?\b/i;
